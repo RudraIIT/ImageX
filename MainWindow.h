@@ -11,6 +11,16 @@
 #include <opencv2/opencv.hpp>
 #include "ImageArea.h"  
 
+enum FilterType
+{
+    Normal,
+    Grayscale,
+    Sepia,
+    Invert,
+    Cool,
+    Warm
+};
+
 class MainWindow : public QMainWindow
 {
     Q_OBJECT
@@ -33,6 +43,7 @@ class MainWindow : public QMainWindow
     int blurValue = 0;
     int brightnessValue = 0;
     int contrastValue = 100;
+    FilterType currentFilter = Normal;
 };
 
 
