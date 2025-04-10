@@ -69,11 +69,24 @@ void MainWindow::setupUI()
 
     QLabel *contrastLabel = new QLabel("Contrast", this);
     QSlider *contrastSlider = new QSlider(Qt::Horizontal, this);
+    QPushButton *normalBtn = new QPushButton("Normal");
+    QPushButton *grayscaleBtn = new QPushButton("Grayscale");
+    QPushButton *sepiaBtn = new QPushButton("Sepia");
+    QPushButton *invertBtn = new QPushButton("Invert");
+    QPushButton *coolBtn = new QPushButton("Cool");
+    QPushButton *warmBtn = new QPushButton("Warm");
     contrastSlider->setRange(0, 300);
     contrastSlider->setValue(100); 
 
     sidebarLayout->addWidget(contrastLabel);
     sidebarLayout->addWidget(contrastSlider);
+
+    sidebarLayout->addWidget(normalBtn);
+    sidebarLayout->addWidget(grayscaleBtn);
+    sidebarLayout->addWidget(sepiaBtn);
+    sidebarLayout->addWidget(invertBtn);
+    sidebarLayout->addWidget(coolBtn);
+    sidebarLayout->addWidget(warmBtn);
 
     sidebarLayout->addStretch();
 
@@ -95,6 +108,36 @@ void MainWindow::setupUI()
 
     connect(contrastSlider, &QSlider::valueChanged, this, [=](int value) {
         contrastValue = value;
+        applyFilters();
+    });
+
+    connect(normalBtn, &QPushButton::clicked, this, [=]() {
+        currentFilter = Normal;
+        applyFilters();
+    });
+
+    connect(grayscaleBtn, &QPushButton::clicked, this, [=]() {
+        currentFilter = Grayscale;
+        applyFilters();
+    });
+
+    connect(sepiaBtn, &QPushButton::clicked, this, [=]() {
+        currentFilter = Sepia;
+        applyFilters();
+    });
+
+    connect(invertBtn, &QPushButton::clicked, this, [=]() {
+        currentFilter = Invert;
+        applyFilters();
+    });
+
+    connect(coolBtn, &QPushButton::clicked, this, [=]() {
+        currentFilter = Cool;
+        applyFilters();
+    });
+
+    connect(warmBtn, &QPushButton::clicked, this, [=]() {
+        currentFilter = Warm;
         applyFilters();
     });
 }
@@ -167,6 +210,41 @@ void MainWindow::applyFilters()
     if(originalImage.empty()) return;
 
     cv::Mat filteredImage = originalImage.clone();
+
+    switch(currentFilter) {
+        case Grayscale: {
+            cv::cvtColor(filteredImage, filteredImage, cv::COLOR_BGR2GRAY);
+            cv::cvtColor(filteredImage, filteredImage, cv::COLOR_GRAY2BGR);
+            break;
+        }
+        
+        case Sepia: {
+            cv::Mat kernel = (cv::Mat_<float>(3,3) <<
+                0.272, 0.534, 0.131,
+                0.349, 0.686, 0.168,
+                0.393, 0.769, 0.189);
+            cv::transform(filteredImage, filteredImage, kernel);
+            break;
+        }
+        
+        case Invert: {
+            cv::bitwise_not(filteredImage, filteredImage);
+            break;
+        }
+        
+        case Cool: {
+            filteredImage += cv::Scalar(0,0,20);
+            break;
+        }
+        
+        case Warm: {
+            filteredImage += cv::Scalar(20,20,0);
+            break;
+        }
+        
+        default:
+            break;
+    }
 
     if(blurValue > 0)
     {
