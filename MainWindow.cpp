@@ -28,7 +28,9 @@ void MainWindow::setupUI()
     QAction *openAction = fileMenu->addAction("Open");
     connect(openAction, &QAction::triggered, this, &MainWindow::openImage);
 
-    fileMenu->addAction("Save");
+    QAction *saveAction = fileMenu->addAction("Save");
+    connect(saveAction, &QAction::triggered, this, &MainWindow::saveImage);
+
     fileMenu->addAction("Exit");
 
     QMenu *editMenu = menuBar->addMenu("Edit");
@@ -140,6 +142,8 @@ void MainWindow::setupUI()
         currentFilter = Warm;
         applyFilters();
     });
+
+    
 }
 
 
@@ -261,4 +265,15 @@ void MainWindow::applyFilters()
     QImage qimg(filteredImage.data, filteredImage.cols, filteredImage.rows, filteredImage.step, QImage::Format_RGB888);
 
     imageArea->setImage(qimg.copy());
+}
+
+void MainWindow::saveImage()
+{
+    if(imageArea->getImage().isNull()) return;
+
+    QString fileName = QFileDialog::getSaveFileName(this, "Save Image", "", "Images (*.png *.xpm *.jpg *.bmp)");
+
+    if(!fileName.isEmpty()) {
+        imageArea->getImage().save(fileName);
+    }
 }

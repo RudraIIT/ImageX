@@ -13,6 +13,7 @@ public:
     void setImage(const QImage &image);
     void resizeEvent(QResizeEvent *event);
     void updatePixmap();
+    const QImage& getImage() const { return currentImage; }
 
 private:
     QImage currentImage;

@@ -34,6 +34,7 @@ class MainWindow : public QMainWindow
     // void applyBrightness(int value);
     // void applyContrast(int value);
     void applyFilters();
+    void saveImage();
 
     private:
     void setupUI();
