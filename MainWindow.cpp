@@ -8,6 +8,7 @@
 #include <QSlider>
 #include <QShortcut>
 #include "ImageArea.h"
+#include <opencv2/dnn.hpp>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -80,6 +81,7 @@ void MainWindow::setupUI()
     QPushButton *invertBtn = new QPushButton("Invert");
     QPushButton *coolBtn = new QPushButton("Cool");
     QPushButton *warmBtn = new QPushButton("Warm");
+    QPushButton *backgroundRemoveBtn = new QPushButton("Background Remove");
     contrastSlider->setRange(0, 300);
     contrastSlider->setValue(100); 
 
@@ -92,6 +94,7 @@ void MainWindow::setupUI()
     sidebarLayout->addWidget(invertBtn);
     sidebarLayout->addWidget(coolBtn);
     sidebarLayout->addWidget(warmBtn);
+    sidebarLayout->addWidget(backgroundRemoveBtn);
 
     sidebarLayout->addStretch();
 
@@ -158,7 +161,10 @@ void MainWindow::setupUI()
         applyFilters();
     });
 
-    
+    connect(backgroundRemoveBtn, &QPushButton::clicked, this, [=]() {
+        currentFilter = BackgroundRemove;
+        applyFilters();
+    });
 }
 
 
@@ -262,6 +268,11 @@ void MainWindow::applyFilters()
             filteredImage += cv::Scalar(20,20,0);
             break;
         }
+
+        case BackgroundRemove: {
+            applyBackgroundRemoval();
+            break;
+        }
         
         default:
             break;
@@ -332,5 +343,46 @@ void MainWindow::redo() {
 
 void MainWindow::onSliderRelease()
 {
+    pushToUndoStack();
+}
+
+void MainWindow::applyBackgroundRemoval()
+{
+    if (originalImage.empty())
+        return;
+
+    cv::Mat img = originalImage.clone();
+
+    static cv::dnn::Net net = cv::dnn::readNetFromONNX("/home/rudra/Desktop/ImageX/models/model.onnx");
+
+    cv::Mat blob = cv::dnn::blobFromImage(img, 1.0 / 255.0, cv::Size(320, 320), cv::Scalar(0, 0, 0), true, false);
+    net.setInput(blob);
+
+    cv::Mat outputBlob = net.forward();
+
+    std::vector<cv::Mat> channels;
+    cv::dnn::imagesFromBlob(outputBlob, channels);
+
+    cv::Mat mask = channels[0];
+    cv::resize(mask, mask, img.size());
+
+    cv::Mat foregroundMask;
+    cv::threshold(mask, foregroundMask, 0.5, 1.0, cv::THRESH_BINARY);
+
+    cv::Mat mask3c;
+    cv::cvtColor(foregroundMask, mask3c, cv::COLOR_GRAY2BGR);
+
+    img.convertTo(img, CV_32FC3, 1.0 / 255.0);
+    mask3c.convertTo(mask3c, CV_32FC3);
+    cv::Mat background(img.size(), img.type(), cv::Scalar(1.0, 1.0, 1.0)); 
+
+    cv::Mat output = img.mul(mask3c) + background.mul(1.0 - mask3c);
+
+    output.convertTo(output, CV_8UC3, 255.0); 
+
+    cv::cvtColor(output, output, cv::COLOR_BGR2RGB);
+    QImage qimg(output.data, output.cols, output.rows, output.step, QImage::Format_RGB888);
+    imageArea->setImage(qimg.copy());
+
     pushToUndoStack();
 }

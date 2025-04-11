@@ -19,7 +19,8 @@ enum FilterType
     Sepia,
     Invert,
     Cool,
-    Warm
+    Warm,
+    BackgroundRemove
 };
 
 class MainWindow : public QMainWindow
@@ -40,6 +41,7 @@ class MainWindow : public QMainWindow
     void redo();
     void pushToUndoStack();
     void onSliderRelease();
+    void applyBackgroundRemoval();
 
     private:
     void setupUI();
