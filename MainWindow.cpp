@@ -34,8 +34,10 @@ void MainWindow::setupUI()
     fileMenu->addAction("Exit");
 
     QMenu *editMenu = menuBar->addMenu("Edit");
-    editMenu->addAction("Undo");
-    editMenu->addAction("Redo");
+    QAction *undoAction = editMenu->addAction("Undo");
+    connect(undoAction, &QAction::triggered, this, &MainWindow::undo);
+    QAction *redoAction = editMenu->addAction("Redo");
+    connect(redoAction, &QAction::triggered, this, &MainWindow::redo);
 
     QMenu *helpMenu = menuBar->addMenu("Help");
     helpMenu->addAction("About");
@@ -103,15 +105,21 @@ void MainWindow::setupUI()
         applyFilters();
     });
 
+    connect(blurSlider, &QSlider::sliderReleased, this, &MainWindow::onSliderRelease);
+
     connect(brightnessSlider, &QSlider::valueChanged, this, [=](int value) {
         brightnessValue = value;
         applyFilters();
     });
 
+    connect(brightnessSlider, &QSlider::sliderReleased, this, &MainWindow::onSliderRelease);
+
     connect(contrastSlider, &QSlider::valueChanged, this, [=](int value) {
         contrastValue = value;
         applyFilters();
     });
+
+    connect(contrastSlider, &QSlider::sliderReleased, this, &MainWindow::onSliderRelease);
 
     connect(normalBtn, &QPushButton::clicked, this, [=]() {
         currentFilter = Normal;
@@ -162,6 +170,8 @@ void MainWindow::openImage()
 
         imageArea->setImage(qimg.copy());
     }
+
+    pushToUndoStack();
 }
 
 // void MainWindow::applyBlur(int value)
@@ -276,4 +286,44 @@ void MainWindow::saveImage()
     if(!fileName.isEmpty()) {
         imageArea->getImage().save(fileName);
     }
+}
+
+void MainWindow::pushToUndoStack() {
+    QImage currentImage = imageArea->getImage();
+
+    if(!currentImage.isNull()) {
+        undoStack.push(currentImage);
+        std::cout<< "Pushed to undo stack" << std::endl;
+        while(!redoStack.empty()) {
+            redoStack.pop();
+        }
+    }
+}
+
+void MainWindow::undo() {
+    if(undoStack.empty()) {
+        std::cout << "No more actions to undo." << std::endl;
+        return;
+    }
+
+    redoStack.push(imageArea->getImage());
+    QImage currentImage = undoStack.top();
+    undoStack.pop();
+    
+    imageArea->setImage(currentImage);
+}
+
+void MainWindow::redo() {
+    if(redoStack.empty()) return;
+
+    undoStack.push(imageArea->getImage());
+    QImage currentImage = redoStack.top();
+    redoStack.pop();
+    
+    imageArea->setImage(currentImage);
+}
+
+void MainWindow::onSliderRelease()
+{
+    pushToUndoStack();
 }

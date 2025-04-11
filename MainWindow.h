@@ -10,6 +10,7 @@
 #include <QFrame>
 #include <opencv2/opencv.hpp>
 #include "ImageArea.h"  
+#include <stack>
 
 enum FilterType
 {
@@ -35,6 +36,10 @@ class MainWindow : public QMainWindow
     // void applyContrast(int value);
     void applyFilters();
     void saveImage();
+    void undo();
+    void redo();
+    void pushToUndoStack();
+    void onSliderRelease();
 
     private:
     void setupUI();
@@ -45,6 +50,8 @@ class MainWindow : public QMainWindow
     int brightnessValue = 0;
     int contrastValue = 100;
     FilterType currentFilter = Normal;
+    std::stack<QImage> undoStack;
+    std::stack<QImage> redoStack;
 };
 
 
