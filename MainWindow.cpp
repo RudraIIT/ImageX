@@ -6,6 +6,7 @@
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QSlider>
+#include <QShortcut>
 #include "ImageArea.h"
 
 MainWindow::MainWindow(QWidget *parent)
@@ -98,7 +99,13 @@ void MainWindow::setupUI()
     imageArea->setMinimumSize(600, 400);
 
     mainLayout->addWidget(sidebar);
-    mainLayout->addWidget(imageArea, 1);   
+    mainLayout->addWidget(imageArea, 1); 
+    
+    QShortcut *undoShortcut = new QShortcut(QKeySequence("Ctrl+Z"), this);
+    QShortcut *redoShortcut = new QShortcut(QKeySequence("Ctrl+Y"), this);
+
+    connect(undoShortcut, &QShortcut::activated, this, &MainWindow::undo);
+    connect(redoShortcut, &QShortcut::activated, this, &MainWindow::redo);
 
     connect(blurSlider, &QSlider::valueChanged, this, [=](int value) {
         blurValue = value;
